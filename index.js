@@ -174,9 +174,12 @@ async function run() {
             if (riderEmail) {
                 query.riderEmail = riderEmail
             }
-            if (deliveryStatus) {
+            if (deliveryStatus !== 'parcel_delivered') {
                 // query.deliveryStatus = {$in: ['driver_assigned', 'rider_arriving']}
                 query.deliveryStatus = { $nin: ['parcel_delivered'] }
+            }
+            else{
+                query.deliveryStatus = deliveryStatus;
             }
 
             const cursor = parcelsCollection.find(query)
