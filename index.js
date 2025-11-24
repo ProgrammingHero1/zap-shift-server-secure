@@ -149,15 +149,11 @@ async function run() {
         // parcel api
         app.get('/parcels', async (req, res) => {
             const query = {}
-            const { email, riderEmail, deliveryStatus } = req.query;
+            const { email, deliveryStatus } = req.query;
 
             // /parcels?email=''&
             if (email) {
                 query.senderEmail = email;
-            }
-
-            if(riderEmail){
-                query.riderEmail = riderEmail;
             }
 
             if (deliveryStatus) {
@@ -167,6 +163,22 @@ async function run() {
             const options = { sort: { createdAt: -1 } }
 
             const cursor = parcelsCollection.find(query, options);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        app.get('/parcels/rider', async (req, res) => {
+            const { riderEmail, deliveryStatus } = req.query;
+            const query = {}
+
+            if (riderEmail) {
+                query.riderEmail = riderEmail
+            }
+            if (deliveryStatus) {
+                query.deliveryStatus = deliveryStatus
+            }
+
+            const cursor = parcelsCollection.find(query)
             const result = await cursor.toArray();
             res.send(result);
         })
