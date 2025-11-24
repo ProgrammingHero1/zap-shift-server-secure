@@ -149,11 +149,15 @@ async function run() {
         // parcel api
         app.get('/parcels', async (req, res) => {
             const query = {}
-            const { email, deliveryStatus } = req.query;
+            const { email, riderEmail, deliveryStatus } = req.query;
 
             // /parcels?email=''&
             if (email) {
                 query.senderEmail = email;
+            }
+
+            if(riderEmail){
+                query.riderEmail = riderEmail;
             }
 
             if (deliveryStatus) {
