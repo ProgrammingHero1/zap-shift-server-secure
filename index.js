@@ -92,7 +92,7 @@ async function run() {
             const log = {
                 trackingId,
                 status,
-                details: status.split('-').join(' '),
+                details: status.split('_').join(' '),
                 createdAt: new Date()
             }
             const result = await trackingsCollection.insertOne(log);
@@ -397,7 +397,7 @@ async function run() {
                 if (session.payment_status === 'paid') {
                     const resultPayment = await paymentCollection.insertOne(payment);
 
-                    logTracking(trackingId, 'pending-pickup')
+                    logTracking(trackingId, 'parcel_paid')
 
                     res.send({
                         success: true,
