@@ -272,7 +272,7 @@ async function run() {
             const result = await parcelsCollection.updateOne(query, updatedDoc)
             // log tracking
             logTracking(trackingId, deliveryStatus);
-            
+
             res.send(result);
         })
 
@@ -486,6 +486,14 @@ async function run() {
                 const userResult = await userCollection.updateOne(userQuery, updateUser);
             }
 
+            res.send(result);
+        })
+
+        // tracking related apis
+        app.get('/trackings/:trackingId/logs', async (req, res) => {
+            const trackingId = req.params.trackingId;
+            const query = { trackingId };
+            const result = await trackingsCollection.find(query).toArray();
             res.send(result);
         })
 
