@@ -87,6 +87,17 @@ async function run() {
 
             next();
         }
+        const verifyRider = async (req, res, next) => {
+            const email = req.decoded_email;
+            const query = { email };
+            const user = await userCollection.findOne(query);
+
+            if (!user || user.role !== 'rider') {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+
+            next();
+        }
 
         const logTracking = async (trackingId, status) => {
             const log = {
@@ -291,8 +302,8 @@ async function run() {
 
         // payment related apis
         app.post('/payment-checkout-session', async (req, res) => {
-            const paymentInfo = req.body;
-            const amount = parseInt(paymentInfo.cost) * 100;
+            const parcelInfo = req.body;
+            const amount = parseInt(parcelInfo.cost) * 100;
             const session = await stripe.checkout.sessions.create({
                 line_items: [
                     {
@@ -300,7 +311,7 @@ async function run() {
                             currency: 'usd',
                             unit_amount: amount,
                             product_data: {
-                                name: `Please pay for: ${paymentInfo.parcelName}`
+                                name: `Please pay for: ${parcelInfo.parcelName}`
                             }
                         },
                         quantity: 1,
@@ -308,10 +319,10 @@ async function run() {
                 ],
                 mode: 'payment',
                 metadata: {
-                    parcelId: paymentInfo.parcelId,
-                    trackingId: paymentInfo.trackingId
+                    parcelId: parcelInfo.parcelId,
+                    trackingId: parcelInfo.trackingId
                 },
-                customer_email: paymentInfo.senderEmail,
+                customer_email: parcelInfo.senderEmail,
                 success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
             })
@@ -361,9 +372,8 @@ async function run() {
             const query = { transactionId: transactionId }
 
             const paymentExist = await paymentCollection.findOne(query);
-            console.log(paymentExist);
+            // console.log(paymentExist);
             if (paymentExist) {
-
                 return res.send({
                     message: 'already exists',
                     transactionId,
@@ -398,23 +408,20 @@ async function run() {
                     trackingId: trackingId
                 }
 
-                if (session.payment_status === 'paid') {
-                    const resultPayment = await paymentCollection.insertOne(payment);
 
-                    logTracking(trackingId, 'parcel_paid')
+                const resultPayment = await paymentCollection.insertOne(payment);
 
-                    res.send({
-                        success: true,
-                        modifyParcel: result,
-                        trackingId: trackingId,
-                        transactionId: session.payment_intent,
-                        paymentInfo: resultPayment
-                    })
-                }
+                logTracking(trackingId, 'parcel_paid')
 
+                return res.send({
+                    success: true,
+                    modifyParcel: result,
+                    trackingId: trackingId,
+                    transactionId: session.payment_intent,
+                    paymentInfo: resultPayment
+                })
             }
-
-            res.send({ success: false })
+            return res.send({ success: false })
         })
 
         // payment related apis
