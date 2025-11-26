@@ -224,6 +224,13 @@ async function run() {
                         _id: '$deliveryStatus',
                         count: { $sum: 1 }
                     }
+                },
+                {
+                    $project: {
+                        status: '$_id',
+                        count: 1,
+                        // _id: 0
+                    }
                 }
             ]
             const result = await parcelsCollection.aggregate(pipeline).toArray();
@@ -474,6 +481,56 @@ async function run() {
 
             const cursor = ridersCollection.find(query)
             const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        app.get('/riders/delivery-per-day', async (req, res) => {
+            const email = req.query.email;
+            // aggregate on parcel
+            const pipeline = [
+                {
+                    $match: {
+                        riderEmail: email,
+                        deliveryStatus: "parcel_delivered"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "trackings",
+                        localField: "trackingId",
+                        foreignField: "trackingId",
+                        as: "parcel_trackings"
+                    }
+                },
+                {
+                    $unwind: "$parcel_trackings"
+                },
+                {
+                    $match: {
+                        "parcel_trackings.status": "parcel_delivered"
+                    }
+                },
+                {
+                    // convert timestamp to YYYY-MM-DD string
+                    $addFields: {
+                        deliveryDay: {
+                            $dateToString: {
+                                format: "%Y-%m-%d",
+                                date: "$parcel_trackings.createdAt"
+                            }
+                        }
+                    }
+                },
+                {
+                    // group by date
+                    $group: {
+                        _id: "$deliveryDay",
+                        deliveredCount: { $sum: 1 }
+                    }
+                }
+            ];
+
+            const result = await parcelsCollection.aggregate(pipeline).toArray();
             res.send(result);
         })
 
